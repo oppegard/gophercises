@@ -7,26 +7,41 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
 	csvPath := flag.String("csv", "problems.csv", "Path to CSV file.")
+	limit := flag.Int("limit", 30, "The time limit for the quiz in seconds.")
 	flag.Parse()
 
 	records := readRecords(csvPath)
 	problems := parseRecords(records)
 
+	timeout := make(chan bool, 1)
+	go func() {
+		time.Sleep(time.Duration(*limit) * time.Second)
+		timeout <- true
+	}()
+
 	correct := 0
+loop:
 	for i, problem := range problems {
 		fmt.Printf("Problem #%d: %s = ", i+1, problem.q)
 
-		var input string
-		readInput(&input)
-		if input == problem.a {
-			correct++
+		inputCh := make(chan string, 1)
+		go readInput(inputCh)
+		select {
+		case <-timeout:
+			break loop
+		case input := <-inputCh:
+			if input == problem.a {
+				correct++
+			}
+			break
 		}
 	}
-	fmt.Printf("You scored %d out of %d.\n", correct, len(records))
+	fmt.Printf("\nYou scored %d out of %d.\n", correct, len(records))
 }
 
 func readRecords(csvPath *string) [][]string {
@@ -58,12 +73,14 @@ func parseRecords(records [][]string) []problem {
 	return ret
 }
 
-func readInput(input *string) {
-	n, err := fmt.Scanf("%s\n", input)
+func readInput(c chan string) {
+	var input string
+	n, err := fmt.Scanf("%s\n", &input)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if n != 1 {
 		log.Fatal("Only single-word answers are allowed.")
 	}
+	c <- input
 }
