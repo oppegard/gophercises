@@ -18,30 +18,25 @@ func main() {
 	records := readRecords(csvPath)
 	problems := parseRecords(records)
 
-	timeout := make(chan bool, 1)
-	go func() {
-		time.Sleep(time.Duration(*limit) * time.Second)
-		timeout <- true
-	}()
-
+	timer := time.NewTimer(time.Duration(*limit) * time.Second)
 	correct := 0
-loop:
+problemloop:
 	for i, problem := range problems {
 		fmt.Printf("Problem #%d: %s = ", i+1, problem.q)
-
 		inputCh := make(chan string, 1)
 		go readInput(inputCh)
+
 		select {
-		case <-timeout:
-			break loop
+		case <-timer.C:
+			fmt.Println()
+			break problemloop
 		case input := <-inputCh:
 			if input == problem.a {
 				correct++
 			}
-			break
 		}
 	}
-	fmt.Printf("\nYou scored %d out of %d.\n", correct, len(records))
+	fmt.Printf("You scored %d out of %d.\n", correct, len(records))
 }
 
 func readRecords(csvPath *string) [][]string {
