@@ -29,18 +29,21 @@ func main() {
 		fmt.Printf("Problem #%d: %s = ", i+1, question)
 
 		var input string
-		n, err := fmt.Scanln(&input)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if n != 1 {
-			log.Fatal("Only single-word answer are allowed.")
-		}
-
+		readInput(&input)
 		if input == answer {
 			correct++
 		}
 	}
 
 	fmt.Printf("You scored %d out of %d.\n", correct, len(records))
+}
+
+func readInput(input *string) {
+	n, err := fmt.Scanln(input)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if n != 1 {
+		log.Fatal("Only single-word answer are allowed.")
+	}
 }
